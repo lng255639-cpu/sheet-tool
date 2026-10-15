@@ -1,0 +1,782 @@
+<!doctype html>
+<html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>表格速算台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F2F5F4; --surface:#FFFFFF; --surface-2:#E8EFEC; --ink:#14201B; --muted:#57665F; --line:#D3DDD8;
+  --accent:#0A7A60; --accent-ink:#FFFFFF; --accent-soft:#D6EDE5; --warn:#9A4F12; --warn-soft:#F6E5D4;
+  --head:#E3EBE7; --foot:#DCEBE4; --shadow:0 1px 2px rgba(20,32,27,.06),0 4px 16px rgba(20,32,27,.05);
+  --sans:"Noto Sans TC","Microsoft JhengHei","PingFang TC","Heiti TC",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0E1412; --surface:#161F1C; --surface-2:#1D2925; --ink:#E4EDE9; --muted:#9AAAA3; --line:#2B3833;
+    --accent:#3CC29E; --accent-ink:#06231B; --accent-soft:#173A31; --warn:#E9A56B; --warn-soft:#3A2717;
+    --head:#1B2622; --foot:#17332B; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0E1412; --surface:#161F1C; --surface-2:#1D2925; --ink:#E4EDE9; --muted:#9AAAA3; --line:#2B3833;
+  --accent:#3CC29E; --accent-ink:#06231B; --accent-soft:#173A31; --warn:#E9A56B; --warn-soft:#3A2717;
+  --head:#1B2622; --foot:#17332B; --shadow:none;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 var(--sans);padding-inline:16px;padding-block:20px 40px}
+.wrap{max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{margin:0;text-wrap:balance}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+header.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:12px}
+.mark{width:38px;height:38px;border-radius:8px;background:var(--accent);display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:7px}
+.mark i{background:var(--accent-ink);opacity:.9;border-radius:1px}
+.mark i:nth-child(3n){opacity:.45}
+.brand h1{font-size:22px;font-weight:700;letter-spacing:.02em}
+.brand p{margin:0;color:var(--muted);font-size:13px}
+
+.layout{display:grid;grid-template-columns:340px minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:900px){.layout{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)}
+.panel>h2{font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--muted);padding:14px 16px 0}
+.side{display:flex;flex-direction:column;gap:18px}
+.pbody{padding:12px 16px 16px;display:flex;flex-direction:column;gap:12px}
+
+.drop{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;border:1.5px dashed var(--line);border-radius:8px;padding:18px 12px;cursor:pointer;background:var(--surface-2);transition:border-color .15s,background .15s}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop strong{font-size:15px}
+.drop span{font-size:12.5px;color:var(--muted)}
+.drop input{position:absolute;width:1px;height:1px;opacity:0}
+.fileinfo{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:13.5px}
+.fileinfo b{word-break:break-all}
+.badge{font-size:11.5px;padding:1px 8px;border-radius:99px;background:var(--warn-soft);color:var(--warn);font-weight:500;letter-spacing:.04em}
+.field{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.field select,.field input{color:var(--ink)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+select,input[type=text],input[type=number]{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-width:0;width:100%}
+.note{font-size:12px;color:var(--muted);margin:0}
+
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.step{border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.step.off{opacity:.55}
+.step.err{border-color:var(--warn)}
+.shead{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line);background:var(--surface-2);border-radius:8px 8px 0 0}
+.sno{font:500 12px var(--mono);width:22px;height:22px;display:grid;place-items:center;border-radius:50%;background:var(--accent);color:var(--accent-ink);flex:none}
+.shead strong{font-size:14px;flex:1}
+.ibtn{border:0;background:transparent;border-radius:5px;padding:2px 6px;cursor:pointer;color:var(--muted);font-size:13px;line-height:1.4}
+.ibtn:hover{background:var(--line);color:var(--ink)}
+.sbody{padding:10px;display:flex;flex-direction:column;gap:8px}
+.sline{display:flex;gap:6px;align-items:center}
+.sline>*{flex:1}
+.sline .ibtn{flex:none}
+.lab{font-size:12px;color:var(--muted)}
+.chk{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.chip span{display:block;font-size:13px;padding:2px 10px;border:1px solid var(--line);border-radius:99px;background:var(--surface)}
+.chip input:checked+span{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.serr{margin:0;padding:0 10px 10px;font-size:12.5px;color:var(--warn)}
+.toggle{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);cursor:pointer}
+.link{border:0;background:none;color:var(--accent);cursor:pointer;padding:0;font-size:13px;text-align:left;width:max-content}
+.link:hover{text-decoration:underline}
+.adds{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.add{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:0;border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:7px 10px;cursor:pointer}
+.add:hover{border-color:var(--accent);background:var(--accent-soft)}
+.add b{font-size:13.5px;font-weight:500}
+.add small{font-size:11.5px;color:var(--muted)}
+.empty-steps{font-size:13px;color:var(--muted);margin:0;padding:10px;border:1px dashed var(--line);border-radius:8px;text-align:center}
+
+.main{display:flex;flex-direction:column;gap:12px;min-width:0}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;padding:12px 16px}
+.flow{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;font-size:14px}
+.flow .num{font:500 18px var(--mono);font-variant-numeric:tabular-nums}
+.flow .arrow{color:var(--muted)}
+.flow small{color:var(--muted)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:6px 12px;cursor:pointer;font-size:14px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:500}
+.btn.primary:hover{filter:brightness(1.07)}
+.opts{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-size:13px;color:var(--muted);padding:0 16px 12px}
+.opts select{width:auto;padding:3px 6px}
+
+.tablewrap{overflow:auto;max-height:72vh;border-top:1px solid var(--line)}
+table{border-collapse:separate;border-spacing:0;font-size:13.5px;min-width:100%}
+th,td{padding:5px 12px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);white-space:nowrap;text-align:left}
+td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+thead th{position:sticky;top:0;background:var(--head);z-index:1;padding:0;vertical-align:bottom}
+thead th button{all:unset;display:flex;flex-direction:column;gap:0;padding:4px 12px 6px;cursor:pointer;width:100%;box-sizing:border-box}
+thead th.n button{align-items:flex-end}
+thead th button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.colL{font:400 10.5px var(--mono);color:var(--muted);letter-spacing:.06em}
+.colN{font-weight:700;font-size:13.5px}
+.colN .dir{color:var(--accent);margin-left:4px}
+.rn{color:var(--muted);font:400 11.5px var(--mono);text-align:right;background:var(--head);position:sticky;left:0;z-index:0}
+thead th.rn{z-index:2;left:0}
+tbody tr:hover td{background:var(--surface-2)}
+tfoot td{position:sticky;bottom:0;background:var(--foot);font-weight:700;border-top:2px solid var(--accent)}
+tfoot td.rn{background:var(--foot)}
+.blank{color:var(--line)}
+.more{padding:10px 16px;display:flex;align-items:center;gap:12px;font-size:13px;color:var(--muted)}
+
+details.prof summary{cursor:pointer;padding:12px 16px;font-size:14px;font-weight:500;list-style-position:inside}
+details.prof .pt{overflow-x:auto;padding:0 16px 14px}
+details.prof table{min-width:0}
+details.prof td,details.prof th{border-right:0}
+.type{font-size:11.5px;padding:0 7px;border-radius:99px;background:var(--surface-2);color:var(--muted)}
+.type.num{background:var(--accent-soft);color:var(--accent)}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:8px;font-size:14px;z-index:10;max-width:calc(100% - 32px)}
+.copybox{width:100%;height:120px;font:12px var(--mono);border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:8px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <div>
+        <h1>表格速算台</h1>
+        <p>匯入 CSV 或 Excel，排好整理步驟，自動加總、分組、篩選</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="side">
+      <section class="panel">
+        <h2>資料來源</h2>
+        <div class="pbody">
+          <label class="drop" id="drop" for="file">
+            <input type="file" id="file" accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm,.ods">
+            <strong>選擇檔案或拖曳到這裡</strong>
+            <span>.xlsx .xls .csv 皆可，中文 CSV（UTF-8 / Big5）自動辨識</span>
+            <span>也能直接 Ctrl+V 貼上從 Excel 複製的儲存格</span>
+          </label>
+          <div class="fileinfo" id="fileinfo"></div>
+          <div class="row2">
+            <label class="field" id="sheetField">工作表
+              <select id="sheet"></select>
+            </label>
+            <label class="field">標題在第幾列
+              <input type="number" id="headerRow" min="1" value="1">
+            </label>
+          </div>
+          <p class="note">檔案只在你的瀏覽器裡處理，不會上傳。</p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>整理步驟</h2>
+        <div class="pbody">
+          <ol class="steps" id="steps"></ol>
+          <div class="lab">新增步驟（由上往下依序執行）</div>
+          <div class="adds" id="adds"></div>
+          <button class="link" id="clearSteps" type="button">清除全部步驟</button>
+          <p class="note">步驟會記在這個瀏覽器，下次匯入同格式的檔案可直接套用。</p>
+        </div>
+      </section>
+    </aside>
+
+    <main class="main">
+      <section class="panel">
+        <div class="toolbar">
+          <div class="flow" id="flow"></div>
+          <div class="actions">
+            <button class="btn primary" id="dlXlsx" type="button">下載 Excel</button>
+            <button class="btn" id="dlCsv" type="button">下載 CSV</button>
+            <button class="btn" id="copy" type="button">複製（可貼回 Excel）</button>
+          </div>
+        </div>
+        <div class="opts">
+          <label>最下方統計列
+            <select id="footFn">
+              <option value="sum">合計</option>
+              <option value="avg">平均</option>
+              <option value="max">最大</option>
+              <option value="min">最小</option>
+              <option value="count">筆數</option>
+              <option value="none">不顯示</option>
+            </select>
+          </label>
+          <label class="chk"><input type="checkbox" id="exportFoot"> 匯出時包含統計列</label>
+          <span>點欄名可排序</span>
+        </div>
+        <div id="copyArea" hidden style="padding:0 16px 12px">
+          <p class="note">瀏覽器不允許自動複製，請按 Ctrl+C 複製下方已選取的內容：</p>
+          <textarea class="copybox" id="copyText" readonly></textarea>
+        </div>
+        <div class="tablewrap" id="tablewrap"></div>
+        <div class="more" id="more" hidden></div>
+      </section>
+
+      <section class="panel">
+        <details class="prof" id="prof">
+          <summary id="profSum">原始資料欄位概況</summary>
+          <div class="pt" id="profBody"></div>
+        </details>
+      </section>
+    </main>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const STEP_TYPES = {
+  group:  {label:'分組彙總', desc:'依欄位加總、平均、計數'},
+  filter: {label:'篩選',     desc:'只留符合條件的列'},
+  sort:   {label:'排序',     desc:'由大到小或由小到大'},
+  calc:   {label:'計算欄',   desc:'兩欄相加減乘除'},
+  clean:  {label:'清理資料', desc:'去空白、刪空列、去重複'},
+  keep:   {label:'選取欄位', desc:'只留需要的欄'},
+  limit:  {label:'取前幾列', desc:'例如前 10 名'},
+};
+const AGG = {sum:'加總', avg:'平均', count:'筆數', min:'最小', max:'最大', distinct:'不重複數'};
+const OPS = {eq:'等於', ne:'不等於', has:'包含', nothas:'不包含', gt:'大於', ge:'大於等於', lt:'小於', le:'小於等於', empty:'是空白', notempty:'不是空白'};
+const CALC = {add:'＋', sub:'－', mul:'×', div:'÷'};
+const LS_KEY = 'sheetsum.recipe.v1';
+
+/* ---------- value helpers ---------- */
+function isBlank(v){ return v == null || String(v).trim() === ''; }
+function toNum(v){
+  if (typeof v === 'number') return isFinite(v) ? v : NaN;
+  if (v == null || typeof v === 'boolean') return NaN;
+  let s = String(v).trim(); if (!s) return NaN;
+  let neg = false;
+  if (/^\(.*\)$/.test(s)) { neg = true; s = s.slice(1, -1); }
+  const pct = s.endsWith('%'); if (pct) s = s.slice(0, -1);
+  s = s.replace(/^(NT\$|US\$|\$|NTD|￥|¥|€|£)/i, '').replace(/[,\s，]/g, '').replace(/元$/, '');
+  if (!/^[-+]?(\d+\.?\d*|\.\d+)(e[-+]?\d+)?$/i.test(s)) return NaN;
+  let n = Number(s); if (pct) n /= 100;
+  return neg ? -n : n;
+}
+const round = z => Math.round(z * 1e10) / 1e10;
+const nf = new Intl.NumberFormat('zh-TW', {maximumFractionDigits: 2});
+function cmp(a, b){
+  const na = toNum(a), nb = toNum(b);
+  if (!isNaN(na) && !isNaN(nb)) return na - nb;
+  return String(a ?? '').localeCompare(String(b ?? ''), 'zh-Hant', {numeric: true});
+}
+function isNumCol(rows, i){
+  let ne = 0, nn = 0;
+  for (const r of rows){ const v = r[i]; if (isBlank(v)) continue; ne++; if (!isNaN(toNum(v))) nn++; }
+  return ne > 0 && nn / ne >= 0.9;
+}
+function colLetter(i){ let s = ''; i++; while (i > 0){ const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
+function uniqueName(name, cols){ let n = name, k = 2; while (cols.includes(n)) n = `${name} (${k++})`; return n; }
+function fmtDate(d){
+  const p = x => String(x).padStart(2, '0');
+  const ds = `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+  return (d.getHours() || d.getMinutes()) ? `${ds} ${p(d.getHours())}:${p(d.getMinutes())}` : ds;
+}
+function show(v, fmt){
+  if (typeof v === 'number') return fmt ? nf.format(v) : String(round(v));
+  return String(v ?? '');
+}
+
+/* ---------- state ---------- */
+let nextId = 1;
+const state = {fileName:'', sheets:{}, sheetNames:[], sheet:'', headerRow:1, isSample:false};
+let steps = [], stepsAreSample = false;
+let base = {cols:[], rows:[]};
+let result = {cols:[], rows:[], fmt:new Set()};
+let stepInputs = [], stepErrors = [];
+let viewSort = null, shown = 300;
+
+function mkStep(type, cols, rows){
+  const c = cols || [], r = rows || [];
+  const nums = c.filter((_, i) => isNumCol(r, i));
+  const texts = c.filter(x => !nums.includes(x));
+  const s = {id: nextId++, type, on: true};
+  if (type === 'clean') Object.assign(s, {trim:true, dropEmpty:true, dedupe:false});
+  if (type === 'filter') Object.assign(s, {col: texts[0] || c[0] || '', op:'eq', val:''});
+  if (type === 'sort') Object.assign(s, {col: nums.at(-1) || c[0] || '', dir:'desc'});
+  if (type === 'calc') Object.assign(s, {name:'', a: nums[0] || c[0] || '', op:'mul', b: nums[1] || '__const', k:'1'});
+  if (type === 'group') Object.assign(s, {by: texts[0] ? [texts[0]] : [], aggs: [{col: nums.at(-1) || '', fn:'sum'}]});
+  if (type === 'keep') Object.assign(s, {cols: c.slice()});
+  if (type === 'limit') Object.assign(s, {n: 10});
+  return s;
+}
+
+/* ---------- pipeline ---------- */
+function runStep(st, d){
+  const idx = c => d.cols.indexOf(c);
+  const need = c => { if (!c) throw new Error('請選擇欄位'); if (idx(c) < 0) throw new Error(`找不到欄位「${c}」`); };
+  switch (st.type){
+    case 'clean': {
+      let rows = d.rows;
+      if (st.trim) rows = rows.map(r => r.map(v => typeof v === 'string' ? v.trim() : v));
+      if (st.dropEmpty) rows = rows.filter(r => r.some(v => !isBlank(v)));
+      if (st.dedupe){ const seen = new Set(); rows = rows.filter(r => { const k = JSON.stringify(r); if (seen.has(k)) return false; seen.add(k); return true; }); }
+      return {...d, rows};
+    }
+    case 'filter': {
+      need(st.col); const i = idx(st.col);
+      const val = String(st.val ?? ''), vn = toNum(val), vl = val.trim().toLowerCase();
+      if (!['empty','notempty'].includes(st.op) && !val.trim()) throw new Error('請輸入條件值');
+      const test = v => {
+        const s = String(v ?? '').trim(), n = toNum(v), both = !isNaN(n) && !isNaN(vn);
+        switch (st.op){
+          case 'eq': return both ? n === vn : s === val.trim();
+          case 'ne': return both ? n !== vn : s !== val.trim();
+          case 'has': return s.toLowerCase().includes(vl);
+          case 'nothas': return !s.toLowerCase().includes(vl);
+          case 'gt': return !isBlank(v) && cmp(v, val) > 0;
+          case 'ge': return !isBlank(v) && cmp(v, val) >= 0;
+          case 'lt': return !isBlank(v) && cmp(v, val) < 0;
+          case 'le': return !isBlank(v) && cmp(v, val) <= 0;
+          case 'empty': return isBlank(v);
+          case 'notempty': return !isBlank(v);
+        }
+        return true;
+      };
+      return {...d, rows: d.rows.filter(r => test(r[i]))};
+    }
+    case 'sort': {
+      need(st.col); const i = idx(st.col), sign = st.dir === 'asc' ? 1 : -1;
+      const rows = d.rows.slice().sort((a, b) => {
+        const ba = isBlank(a[i]), bb = isBlank(b[i]);
+        if (ba || bb) return ba - bb;
+        return sign * cmp(a[i], b[i]);
+      });
+      return {...d, rows};
+    }
+    case 'calc': {
+      need(st.a); const ia = idx(st.a); let ib = -1, k = NaN;
+      if (st.b === '__const'){ k = toNum(st.k); if (isNaN(k)) throw new Error('請輸入固定數字'); }
+      else { need(st.b); ib = idx(st.b); }
+      const f = {add:(x,y)=>x+y, sub:(x,y)=>x-y, mul:(x,y)=>x*y, div:(x,y)=>y === 0 ? NaN : x/y}[st.op];
+      const name = uniqueName((st.name || '').trim() || `${st.a}${CALC[st.op]}${ib < 0 ? st.k : st.b}`, d.cols);
+      const rows = d.rows.map(r => { const z = f(toNum(r[ia]), ib < 0 ? k : toNum(r[ib])); return [...r, isNaN(z) ? '' : round(z)]; });
+      return {cols: [...d.cols, name], rows, fmt: new Set([...d.fmt, name])};
+    }
+    case 'group': {
+      const by = (st.by || []).filter(Boolean); by.forEach(need);
+      const aggs = (st.aggs || []).filter(a => a.col); aggs.forEach(a => need(a.col));
+      if (!by.length && !aggs.length) throw new Error('請選擇分組欄位或彙總欄位');
+      const bi = by.map(idx), ai = aggs.map(a => idx(a.col));
+      const groups = new Map();
+      for (const r of d.rows){
+        const kv = bi.map(i => r[i] ?? '');
+        const key = JSON.stringify(kv.map(v => String(v).trim()));
+        let g = groups.get(key);
+        if (!g){ g = {kv, n:0, acc: aggs.map(() => ({sum:0, n:0, rows:0, min:Infinity, max:-Infinity, set:new Set()}))}; groups.set(key, g); }
+        g.n++;
+        aggs.forEach((a, j) => {
+          const v = r[ai[j]], A = g.acc[j]; if (isBlank(v)) return;
+          A.rows++; A.set.add(String(v).trim());
+          const n = toNum(v); if (!isNaN(n)){ A.sum += n; A.n++; if (n < A.min) A.min = n; if (n > A.max) A.max = n; }
+        });
+      }
+      const cols = [...by]; const fmt = new Set();
+      if (aggs.length) aggs.forEach(a => { const nm = uniqueName(`${a.col}・${AGG[a.fn]}`, cols); cols.push(nm); fmt.add(nm); });
+      else { cols.push('筆數'); fmt.add('筆數'); }
+      const rows = [...groups.values()].map(g => {
+        if (!aggs.length) return [...g.kv, g.n];
+        return [...g.kv, ...aggs.map((a, j) => { const A = g.acc[j];
+          switch (a.fn){
+            case 'sum': return A.n ? round(A.sum) : 0;
+            case 'avg': return A.n ? round(A.sum / A.n) : '';
+            case 'count': return A.rows;
+            case 'min': return A.n ? A.min : '';
+            case 'max': return A.n ? A.max : '';
+            case 'distinct': return A.set.size;
+          } })];
+      });
+      return {cols, rows, fmt};
+    }
+    case 'keep': {
+      const keep = (st.cols || []).filter(c => idx(c) >= 0);
+      if (!keep.length) throw new Error('至少要選一個欄位');
+      const ii = d.cols.map((c, i) => keep.includes(c) ? i : -1).filter(i => i >= 0);
+      return {cols: ii.map(i => d.cols[i]), rows: d.rows.map(r => ii.map(i => r[i])), fmt: d.fmt};
+    }
+    case 'limit': {
+      const n = parseInt(st.n, 10); if (!(n > 0)) throw new Error('請輸入大於 0 的數字');
+      return {...d, rows: d.rows.slice(0, n)};
+    }
+  }
+  return d;
+}
+function run(){
+  let d = {cols: base.cols, rows: base.rows, fmt: new Set()};
+  stepInputs = []; stepErrors = [];
+  steps.forEach((st, i) => {
+    stepInputs[i] = d; stepErrors[i] = null;
+    if (!st.on) return;
+    try { d = runStep(st, d); } catch (e){ stepErrors[i] = e.message; }
+  });
+  result = d;
+  if (viewSort && !result.cols.includes(viewSort.col)) viewSort = null;
+}
+function viewRows(){
+  if (!viewSort) return result.rows;
+  const i = result.cols.indexOf(viewSort.col), sign = viewSort.dir === 'asc' ? 1 : -1;
+  return result.rows.slice().sort((a, b) => { const ba = isBlank(a[i]), bb = isBlank(b[i]); if (ba || bb) return ba - bb; return sign * cmp(a[i], b[i]); });
+}
+
+/* ---------- loading ---------- */
+function guessHeader(aoa){
+  const lim = Math.min(aoa.length, 20); let max = 0;
+  for (let i = 0; i < lim; i++) max = Math.max(max, aoa[i].filter(v => !isBlank(v)).length);
+  for (let i = 0; i < lim; i++) if (aoa[i].filter(v => !isBlank(v)).length >= Math.max(2, max * 0.6)) return i + 1;
+  return 1;
+}
+function loadWorkbook(wb, name){
+  const sheets = {};
+  for (const sn of wb.SheetNames){
+    const aoa = XLSX.utils.sheet_to_json(wb.Sheets[sn], {header:1, raw:true, defval:'', blankrows:true, range:0});
+    while (aoa.length && aoa.at(-1).every(isBlank)) aoa.pop();
+    sheets[sn] = aoa.map(r => r.map(v => v instanceof Date ? fmtDate(v) : v));
+  }
+  const names = wb.SheetNames.filter(n => sheets[n].length);
+  if (!names.length){ toast('這個檔案裡沒有資料'); return; }
+  Object.assign(state, {fileName: name, sheets, sheetNames: names, sheet: names[0], isSample: false});
+  state.headerRow = guessHeader(sheets[names[0]]);
+  if (stepsAreSample){ steps = []; stepsAreSample = false; }
+  viewSort = null;
+  buildBase(); refresh(true);
+  toast(`已匯入 ${name}`);
+}
+function buildBase(){
+  const aoa = state.sheets[state.sheet] || [];
+  const h = Math.min(Math.max(1, state.headerRow | 0), Math.max(1, aoa.length));
+  const width = aoa.reduce((m, r) => Math.max(m, r.length), 0);
+  const head = aoa[h - 1] || [];
+  const data = aoa.slice(h).filter(r => r.some(v => !isBlank(v)));
+  const keep = [];
+  for (let i = 0; i < width; i++) if (!isBlank(head[i]) || data.some(r => !isBlank(r[i]))) keep.push(i);
+  const cols = [];
+  for (const i of keep) cols.push(uniqueName(isBlank(head[i]) ? `欄位${colLetter(i)}` : String(head[i]).trim(), cols));
+  const rows = data.map(r => keep.map(i => r[i] ?? ''));
+  base = {cols, rows};
+}
+async function readFile(file){
+  try {
+    const buf = await file.arrayBuffer();
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    let wb;
+    if (['csv','tsv','txt'].includes(ext)){
+      let text;
+      try { text = new TextDecoder('utf-8', {fatal:true}).decode(buf); }
+      catch { text = new TextDecoder('big5').decode(buf); }
+      wb = XLSX.read(text.replace(/^﻿/, ''), {type:'string', raw:true});
+    } else {
+      wb = XLSX.read(buf, {type:'array', cellDates:true});
+    }
+    loadWorkbook(wb, file.name);
+  } catch (e){
+    toast(`讀不到「${file.name}」：請確認是 Excel 或 CSV 檔`);
+  }
+}
+
+/* ---------- sample ---------- */
+function sampleWorkbook(){
+  const stores = ['台北信義店','台中公益店','高雄左營店'];
+  const items = [['飲料','珍珠奶茶',65],['飲料','冬瓜檸檬',55],['輕食','雞肉捲',85],['輕食','蜂蜜鬆餅',70],['周邊','保溫杯',390]];
+  let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  const aoa = [['日期','門市','類別','品項','數量','單價','金額']];
+  for (let d = 1; d <= 8; d++) for (let k = 0; k < 3; k++){
+    const s = stores[(d + k) % 3], it = items[Math.floor(rnd() * items.length)], q = 1 + Math.floor(rnd() * (it[2] > 200 ? 3 : 24));
+    aoa.push([`2026-09-${String(d).padStart(2,'0')}`, s, it[0], it[1], q, it[2], q * it[2]]);
+  }
+  return aoa;
+}
+
+/* ---------- render ---------- */
+function colOptions(val, cols, extra = ''){
+  let h = '';
+  if (!val) h += `<option value="" selected>選擇欄位</option>`;
+  else if (!cols.includes(val) && val !== '__const') h += `<option value="${esc(val)}" selected>${esc(val)}（找不到）</option>`;
+  h += cols.map(c => `<option value="${esc(c)}"${c === val ? ' selected' : ''}>${esc(c)}</option>`).join('');
+  return h + extra;
+}
+function optMap(map, val){ return Object.entries(map).map(([k, v]) => `<option value="${k}"${k === val ? ' selected' : ''}>${esc(v)}</option>`).join(''); }
+function chipList(list, sel, id, cols){
+  const all = [...cols, ...sel.filter(c => !cols.includes(c))];
+  return `<div class="chips">${all.map((c, j) => `<label class="chip"><input type="checkbox" id="s${id}-${list}-${j}" data-list="${list}" value="${esc(c)}"${sel.includes(c) ? ' checked' : ''}><span>${esc(c)}${cols.includes(c) ? '' : '（找不到）'}</span></label>`).join('')}</div>`;
+}
+function stepBody(st, cols){
+  const id = st.id;
+  switch (st.type){
+    case 'clean': return `
+      <label class="chk"><input type="checkbox" id="s${id}-trim" data-k="trim"${st.trim ? ' checked' : ''}> 去除文字前後空白</label>
+      <label class="chk"><input type="checkbox" id="s${id}-dropEmpty" data-k="dropEmpty"${st.dropEmpty ? ' checked' : ''}> 刪除整列空白的列</label>
+      <label class="chk"><input type="checkbox" id="s${id}-dedupe" data-k="dedupe"${st.dedupe ? ' checked' : ''}> 刪除完全重複的列</label>`;
+    case 'filter': return `
+      <div class="sline"><select id="s${id}-col" data-k="col" aria-label="篩選欄位">${colOptions(st.col, cols)}</select>
+      <select id="s${id}-op" data-k="op" aria-label="條件">${optMap(OPS, st.op)}</select></div>
+      ${['empty','notempty'].includes(st.op) ? '' : `<input type="text" id="s${id}-val" data-k="val" value="${esc(st.val ?? '')}" placeholder="條件值，例如 台北 或 100" aria-label="條件值">`}`;
+    case 'sort': return `
+      <div class="sline"><select id="s${id}-col" data-k="col" aria-label="排序欄位">${colOptions(st.col, cols)}</select>
+      <select id="s${id}-dir" data-k="dir" aria-label="方向">${optMap({desc:'由大到小', asc:'由小到大'}, st.dir)}</select></div>`;
+    case 'calc': return `
+      <input type="text" id="s${id}-name" data-k="name" value="${esc(st.name || '')}" placeholder="新欄位名稱（可留空）" aria-label="新欄位名稱">
+      <div class="sline"><select id="s${id}-a" data-k="a" aria-label="欄位 A">${colOptions(st.a, cols)}</select>
+      <select id="s${id}-op" data-k="op" style="flex:0 0 58px" aria-label="運算">${optMap(CALC, st.op)}</select>
+      <select id="s${id}-b" data-k="b" aria-label="欄位 B">${colOptions(st.b, cols, `<option value="__const"${st.b === '__const' ? ' selected' : ''}>固定數字…</option>`)}</select></div>
+      ${st.b === '__const' ? `<input type="text" inputmode="decimal" id="s${id}-k" data-k="k" value="${esc(st.k ?? '')}" placeholder="數字，例如 1.05" aria-label="固定數字">` : ''}`;
+    case 'group': return `
+      <div class="lab">分組依據（可複選；都不選＝全部合成一列）</div>
+      ${chipList('by', st.by || [], id, cols)}
+      <div class="lab">要算什麼</div>
+      ${(st.aggs || []).map((a, j) => `<div class="sline">
+        <select id="s${id}-agg${j}-col" data-k="aggs.${j}.col" aria-label="彙總欄位">${colOptions(a.col, cols)}</select>
+        <select id="s${id}-agg${j}-fn" data-k="aggs.${j}.fn" style="flex:0 0 96px" aria-label="彙總方式">${optMap(AGG, a.fn)}</select>
+        <button class="ibtn" type="button" data-act="rmagg" data-j="${j}" aria-label="移除這項">✕</button></div>`).join('')}
+      <button class="link" type="button" data-act="addagg">＋ 再算一欄</button>`;
+    case 'keep': return `<div class="lab">勾選要保留的欄位</div>${chipList('cols', st.cols || [], id, cols)}`;
+    case 'limit': return `<div class="sline"><span style="flex:none">只留前</span><input type="number" min="1" id="s${id}-n" data-k="n" value="${esc(st.n)}" aria-label="列數"><span style="flex:none">列</span></div>`;
+  }
+  return '';
+}
+function renderSteps(){
+  const el = $('#steps');
+  if (!steps.length){ el.innerHTML = `<li class="empty-steps">還沒有步驟，目前顯示原始資料。<br>從下面選一個開始，例如「分組彙總」。</li>`; return; }
+  el.innerHTML = steps.map((st, i) => {
+    const cols = (stepInputs[i] || {cols: []}).cols, err = stepErrors[i];
+    return `<li class="step${st.on ? '' : ' off'}${err && st.on ? ' err' : ''}" data-i="${i}">
+      <div class="shead"><span class="sno">${i + 1}</span><strong>${STEP_TYPES[st.type].label}</strong>
+        <label class="toggle"><input type="checkbox" id="s${st.id}-on" data-k="on"${st.on ? ' checked' : ''}> 啟用</label>
+        <button class="ibtn" type="button" data-act="up" aria-label="上移"${i === 0 ? ' disabled' : ''}>↑</button>
+        <button class="ibtn" type="button" data-act="down" aria-label="下移"${i === steps.length - 1 ? ' disabled' : ''}>↓</button>
+        <button class="ibtn" type="button" data-act="del" aria-label="刪除步驟">✕</button></div>
+      <div class="sbody">${stepBody(st, cols)}</div>
+      <p class="serr" ${err && st.on ? '' : 'hidden'}>${esc(err || '')}，這一步先跳過。</p>
+    </li>`;
+  }).join('');
+}
+function updateErrs(){
+  document.querySelectorAll('#steps .step').forEach(li => {
+    const i = +li.dataset.i, err = stepErrors[i], on = steps[i].on;
+    li.classList.toggle('err', !!(err && on));
+    const p = li.querySelector('.serr'); p.hidden = !(err && on); p.textContent = `${err || ''}，這一步先跳過。`;
+  });
+}
+function renderSource(){
+  const fi = $('#fileinfo');
+  fi.innerHTML = state.fileName ? `<span>目前檔案</span><b>${esc(state.fileName)}</b>${state.isSample ? '<span class="badge">範例資料</span>' : ''}` : '';
+  $('#sheet').innerHTML = state.sheetNames.map(n => `<option${n === state.sheet ? ' selected' : ''}>${esc(n)}</option>`).join('');
+  $('#sheetField').hidden = state.sheetNames.length < 2;
+  $('#headerRow').value = state.headerRow;
+}
+function footValues(rows){
+  const fn = $('#footFn').value;
+  if (fn === 'none' || !rows.length) return null;
+  const vals = result.cols.map((c, i) => {
+    if (!isNumCol(rows, i)) return '';
+    const ns = rows.map(r => toNum(r[i])).filter(n => !isNaN(n));
+    if (!ns.length) return '';
+    if (fn === 'sum') return round(ns.reduce((a, b) => a + b, 0));
+    if (fn === 'avg') return round(ns.reduce((a, b) => a + b, 0) / ns.length);
+    if (fn === 'max') return ns.reduce((a, b) => b > a ? b : a);
+    if (fn === 'min') return ns.reduce((a, b) => b < a ? b : a);
+    if (fn === 'count') return ns.length;
+  });
+  const label = $('#footFn').selectedOptions[0].textContent;
+  const li = vals.findIndex(v => v === '');
+  if (li >= 0) vals[li] = label; else vals.unshift(label);
+  return {vals, labelShift: li < 0};
+}
+function renderResult(){
+  const rows = viewRows(), cols = result.cols;
+  const numIdx = new Set(cols.map((c, i) => isNumCol(rows, i) ? i : -1).filter(i => i >= 0));
+  $('#flow').innerHTML = `<span><span class="num">${nf.format(base.rows.length)}</span> <small>列 × ${base.cols.length} 欄</small></span>
+    <span class="arrow">→</span>
+    <span><span class="num">${nf.format(result.rows.length)}</span> <small>列 × ${cols.length} 欄</small></span>
+    <small>${steps.filter(s => s.on).length ? `經過 ${steps.filter(s => s.on).length} 個步驟` : '原始資料'}</small>`;
+  if (!cols.length){ $('#tablewrap').innerHTML = `<p class="more">匯入檔案後，結果會顯示在這裡。</p>`; $('#more').hidden = true; return; }
+  const head = `<tr><th class="rn" scope="col"><span class="colL">&nbsp;</span></th>${cols.map((c, i) => {
+    const dir = viewSort && viewSort.col === c ? (viewSort.dir === 'asc' ? '▲' : '▼') : '';
+    return `<th class="${numIdx.has(i) ? 'n' : ''}" scope="col"><button type="button" data-sort="${i}" title="點一下排序"><span class="colL">${colLetter(i)}</span><span class="colN">${esc(c)}<span class="dir">${dir}</span></span></button></th>`;
+  }).join('')}</tr>`;
+  const body = rows.slice(0, shown).map((r, ri) => `<tr><td class="rn">${ri + 1}</td>${r.map((v, i) =>
+    isBlank(v) ? `<td class="${numIdx.has(i) ? 'n' : ''}"><span class="blank">·</span></td>` :
+    `<td class="${numIdx.has(i) ? 'n' : ''}">${esc(show(v, result.fmt.has(cols[i])))}</td>`).join('')}</tr>`).join('');
+  const f = footValues(rows);
+  let foot = '';
+  if (f){
+    const vals = f.labelShift ? f.vals.slice(1) : f.vals;
+    foot = `<tfoot><tr><td class="rn">${f.labelShift ? esc(f.vals[0]) : 'Σ'}</td>${vals.map((v, i) =>
+      `<td class="${numIdx.has(i) ? 'n' : ''}">${typeof v === 'number' ? esc(nf.format(v)) : esc(v)}</td>`).join('')}</tr></tfoot>`;
+  }
+  $('#tablewrap').innerHTML = `<table><thead>${head}</thead><tbody>${body}</tbody>${foot}</table>`;
+  const more = $('#more');
+  if (rows.length > shown){ more.hidden = false; more.innerHTML = `顯示前 ${nf.format(shown)} 列，共 ${nf.format(rows.length)} 列（匯出會包含全部） <button class="btn" type="button" id="showMore">再顯示 300 列</button>`; }
+  else more.hidden = true;
+}
+function renderProfile(){
+  const {cols, rows} = base;
+  const numCount = cols.filter((_, i) => isNumCol(rows, i)).length;
+  $('#profSum').textContent = `原始資料欄位概況：${cols.length} 欄，其中 ${numCount} 欄是數字`;
+  $('#profBody').innerHTML = `<table><thead><tr><th>欄</th><th>欄位</th><th>類型</th><th class="n">有值</th><th class="n">空白</th><th class="n">加總</th><th class="n">平均</th><th class="n">最小</th><th class="n">最大</th></tr></thead><tbody>${
+    cols.map((c, i) => {
+      const num = isNumCol(rows, i), filled = rows.filter(r => !isBlank(r[i])).length;
+      let s = ['', '', '', ''];
+      if (num){ const ns = rows.map(r => toNum(r[i])).filter(n => !isNaN(n)); const sum = ns.reduce((a, b) => a + b, 0);
+        s = [nf.format(round(sum)), nf.format(round(sum / ns.length)), nf.format(ns.reduce((a, b) => b < a ? b : a)), nf.format(ns.reduce((a, b) => b > a ? b : a))]; }
+      return `<tr><td class="colL">${colLetter(i)}</td><td>${esc(c)}</td><td><span class="type${num ? ' num' : ''}">${num ? '數字' : '文字'}</span></td><td class="n">${nf.format(filled)}</td><td class="n">${nf.format(rows.length - filled)}</td>${s.map(x => `<td class="n">${x}</td>`).join('')}</tr>`;
+    }).join('')}</tbody></table>`;
+}
+function refresh(all){
+  run();
+  if (all){ renderSource(); renderProfile(); }
+  renderSteps(); renderResult();
+}
+
+/* ---------- persistence ---------- */
+function saveRecipe(){ try { localStorage.setItem(LS_KEY, JSON.stringify(steps)); } catch {} }
+function loadRecipe(){
+  try { const s = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); if (Array.isArray(s)) return s.map(x => ({...x, id: nextId++})); } catch {}
+  return null;
+}
+function commit(rerender){
+  stepsAreSample = false; saveRecipe(); run();
+  if (rerender) renderSteps(); else updateErrs();
+  renderResult();
+}
+
+/* ---------- events ---------- */
+function setPath(obj, path, val){ const ks = path.split('.'); let o = obj; ks.slice(0, -1).forEach(k => o = o[k]); o[ks.at(-1)] = val; }
+$('#steps').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const i = +b.closest('.step').dataset.i, st = steps[i];
+  const act = b.dataset.act;
+  if (act === 'del') steps.splice(i, 1);
+  if (act === 'up' && i > 0) [steps[i - 1], steps[i]] = [steps[i], steps[i - 1]];
+  if (act === 'down' && i < steps.length - 1) [steps[i + 1], steps[i]] = [steps[i], steps[i + 1]];
+  if (act === 'addagg') (st.aggs = st.aggs || []).push({col: '', fn: 'sum'});
+  if (act === 'rmagg') st.aggs.splice(+b.dataset.j, 1);
+  commit(true);
+});
+$('#steps').addEventListener('change', e => {
+  const t = e.target, li = t.closest('.step'); if (!li) return;
+  const st = steps[+li.dataset.i];
+  if (t.dataset.list){ st[t.dataset.list] = [...li.querySelectorAll(`[data-list="${t.dataset.list}"]:checked`)].map(x => x.value); commit(true); return; }
+  if (!t.dataset.k) return;
+  setPath(st, t.dataset.k, t.type === 'checkbox' ? t.checked : t.value);
+  commit(true);
+});
+$('#steps').addEventListener('input', e => {
+  const t = e.target, li = t.closest('.step');
+  if (!li || !t.dataset.k || t.tagName !== 'INPUT' || t.type === 'checkbox') return;
+  setPath(steps[+li.dataset.i], t.dataset.k, t.value);
+  commit(false);
+});
+$('#adds').innerHTML = Object.entries(STEP_TYPES).map(([k, v]) => `<button class="add" type="button" data-add="${k}"><b>＋ ${v.label}</b><small>${v.desc}</small></button>`).join('');
+$('#adds').addEventListener('click', e => {
+  const b = e.target.closest('[data-add]'); if (!b) return;
+  steps.push(mkStep(b.dataset.add, result.cols, result.rows));
+  commit(true);
+});
+$('#clearSteps').addEventListener('click', () => { steps = []; commit(true); });
+$('#tablewrap').addEventListener('click', e => {
+  const b = e.target.closest('[data-sort]'); if (!b) return;
+  const col = result.cols[+b.dataset.sort];
+  if (!viewSort || viewSort.col !== col) viewSort = {col, dir: 'desc'};
+  else if (viewSort.dir === 'desc') viewSort.dir = 'asc';
+  else viewSort = null;
+  renderResult();
+});
+$('#more').addEventListener('click', e => { if (e.target.id === 'showMore'){ shown += 300; renderResult(); } });
+$('#footFn').addEventListener('change', renderResult);
+$('#sheet').addEventListener('change', e => { state.sheet = e.target.value; state.headerRow = guessHeader(state.sheets[state.sheet]); viewSort = null; buildBase(); refresh(true); });
+$('#headerRow').addEventListener('change', e => { state.headerRow = Math.max(1, parseInt(e.target.value, 10) || 1); buildBase(); refresh(true); });
+$('#file').addEventListener('change', e => { const f = e.target.files[0]; if (f) readFile(f); e.target.value = ''; });
+const drop = $('#drop');
+['dragenter','dragover'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); if (ev === 'drop' || !e.relatedTarget) drop.classList.remove('over'); }));
+document.addEventListener('drop', e => { const f = e.dataTransfer && e.dataTransfer.files[0]; if (f) readFile(f); });
+document.addEventListener('paste', e => {
+  if (e.target.closest && e.target.closest('input,textarea,select')) return;
+  const t = e.clipboardData && e.clipboardData.getData('text'); if (!t || !t.trim()) return;
+  e.preventDefault();
+  loadWorkbook(XLSX.read(t, {type:'string', raw:true}), '貼上的資料');
+});
+
+/* ---------- export ---------- */
+function exportAoa(){
+  const rows = viewRows().map(r => r.slice());
+  const out = [result.cols.slice(), ...rows];
+  if ($('#exportFoot').checked){ const f = footValues(viewRows()); if (f) out.push(f.labelShift ? f.vals.slice(1) : f.vals); }
+  return out;
+}
+function baseName(){ return (state.fileName || '資料').replace(/\.[^.]+$/, '') + '_整理'; }
+const inClaude = !!(window.claude && typeof window.claude.use === 'function');
+const dlReady = inClaude ? Promise.resolve(window.claude.use('downloads')).catch(() => null) : Promise.resolve(null);
+async function saveFile(name, data){
+  if (inClaude){
+    const dl = await dlReady;
+    if (!dl){ toast('這個檢視無法下載檔案，請改用「複製」'); return; }
+    try { const r = await dl.save({filename: name, data}); if (r && r.status === 'saved') toast(`已下載 ${name}`); }
+    catch (err){ toast(err && err.code === 'declined' ? '已取消下載' : `無法下載：${(err && (err.message || err.code)) || '未知錯誤'}`); }
+    return;
+  }
+  const blob = data instanceof Blob ? data : new Blob([data]);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast(`已下載 ${name}`);
+}
+function cellOut(v){
+  if (typeof v === 'string' && v.length < 16 && /^-?(0|[1-9]\d*)(\.\d+)?$/.test(v)) return Number(v);
+  return v;
+}
+$('#dlXlsx').addEventListener('click', () => {
+  if (!result.cols.length) return toast('還沒有資料');
+  const ws = XLSX.utils.aoa_to_sheet(exportAoa().map((r, i) => i ? r.map(cellOut) : r));
+  ws['!cols'] = result.cols.map(c => ({wch: Math.max(8, String(c).length * 2 + 2)}));
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '整理結果');
+  const out = XLSX.write(wb, {bookType: 'xlsx', type: 'array'});
+  saveFile(baseName() + '.xlsx', new Blob([out], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+});
+$('#dlCsv').addEventListener('click', () => {
+  if (!result.cols.length) return toast('還沒有資料');
+  const q = v => { const s = String(v ?? ''); return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const csv = '﻿' + exportAoa().map(r => r.map(q).join(',')).join('\r\n');
+  saveFile(baseName() + '.csv', csv);
+});
+$('#copy').addEventListener('click', () => {
+  if (!result.cols.length) return toast('還沒有資料');
+  const tsv = exportAoa().map(r => r.map(v => String(v ?? '').replace(/[\t\r\n]+/g, ' ')).join('\t')).join('\n');
+  const fallback = () => { $('#copyArea').hidden = false; const ta = $('#copyText'); ta.value = tsv; ta.focus(); ta.select(); };
+  try {
+    navigator.clipboard.writeText(tsv).then(() => { $('#copyArea').hidden = true; toast('已複製，到 Excel 按 Ctrl+V 貼上'); }, fallback);
+  } catch { fallback(); }
+});
+
+let toastT;
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2600); }
+
+/* ---------- boot ---------- */
+if (typeof XLSX === 'undefined'){
+  $('#tablewrap').innerHTML = '<p class="more">讀取試算表元件失敗，請確認網路連線後重新整理頁面。</p>';
+  return;
+}
+Object.assign(state, {fileName: '範例：門市銷售.xlsx', sheets: {'九月銷售': sampleWorkbook()}, sheetNames: ['九月銷售'], sheet: '九月銷售', headerRow: 1, isSample: true});
+buildBase();
+const saved = loadRecipe();
+if (saved && saved.length) steps = saved;
+else {
+  steps = [
+    {id: nextId++, type: 'group', on: true, by: ['門市'], aggs: [{col: '數量', fn: 'sum'}, {col: '金額', fn: 'sum'}]},
+    {id: nextId++, type: 'sort', on: true, col: '金額・加總', dir: 'desc'},
+  ];
+  stepsAreSample = true;
+}
+refresh(true);
+})();
+</script>
